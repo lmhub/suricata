@@ -127,6 +127,7 @@ class SuricataSC:
 
         return cmdret
     
+    
     def connect(self):
         try:
             self.socket = socket(AF_UNIX)
