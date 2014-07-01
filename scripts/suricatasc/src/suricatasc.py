@@ -222,7 +222,7 @@ class SuricataSC:
                 else:
                     print "Error: unknown command '%s'" % (command)
                     continue
-
+                
                 if "add-indicator" in cmd:
                     cmdret = self.send_string(json_str)
                 else: 
