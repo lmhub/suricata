@@ -7,7 +7,7 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -159,7 +159,6 @@ class SuricataSC:
             self.cmd_list = cmdret["message"]["commands"]
             self.cmd_list.append("quit")
 
-
     def close(self):
         self.socket.close()
         
@@ -224,7 +223,7 @@ class SuricataSC:
                 else:
                     print "Error: unknown command '%s'" % (command)
                     continue
-
+                
                 if "add-indicator" in cmd:
                     cmdret = self.send_string(json_str)
                 else: 
