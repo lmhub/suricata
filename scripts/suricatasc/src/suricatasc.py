@@ -162,6 +162,7 @@ class SuricataSC:
 
     def close(self):
         self.socket.close()
+        
 
     def interactive(self):
         print "Command list: " + ", ".join(self.cmd_list)
