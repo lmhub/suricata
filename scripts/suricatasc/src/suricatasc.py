@@ -159,7 +159,6 @@ class SuricataSC:
             self.cmd_list = cmdret["message"]["commands"]
             self.cmd_list.append("quit")
 
-
     def close(self):
         self.socket.close()
 
