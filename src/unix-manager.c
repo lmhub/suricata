@@ -33,6 +33,7 @@
 #include "util-debug.h"
 #include "util-signal.h"
 #include "util-ipwatchlist.h"
+//#include "util-urlwatchlist.h"
 #include <util-smtp-indicators.h>
 
 #include <sys/un.h>
@@ -723,6 +724,10 @@ TmEcode UnixManagerAddIndicator(json_t *cmd, json_t *answer, void *data)
     const char *cond = NULL;
     const char *apply_cond = NULL;
     char *ip_values = NULL;
+    char **ip_list = NULL;
+    size_t ip_count = 1;
+    char *ip_tmp = NULL;
+    char *ip_last_delim = 0;
 
     /*Variables used by Malicious E-mail Indicators*/
     const char *category = NULL;
@@ -737,10 +742,7 @@ TmEcode UnixManagerAddIndicator(json_t *cmd, json_t *answer, void *data)
     const char *cybox_relation_type = NULL;
     const char *cybox_relation_text = NULL;
 
-    char **ip_list = NULL;
-    size_t ip_count = 1;
-    char *ip_tmp = NULL;
-    char *ip_last_delim = 0;
+    
 
     /*Pull the Observable from the JSON Indicator*/
     json_t *observable = NULL;
@@ -813,6 +815,64 @@ TmEcode UnixManagerAddIndicator(json_t *cmd, json_t *answer, void *data)
             }
         } else if (strcmp(indic_type_text, "URL Watchlist") == 0) {
             //TODO Implement parsing of URL Watchlist STIX JSON message
+            char *url_values = NULL;
+    
+            if (json_unpack(observable, "{s: {s: s, s: {s: s, s: {s: s, s:s, s:s}}}}",
+                        "cybox:Object", "@id", &cybox_id, "cybox:Properties",
+                        "@xsi:type", &cybox_obj_type, "AddressObject:Address_Value",
+                        "@condition", &cond,"@apply_condition", &apply_cond,
+                        "#text", &url_values) == 0) {
+
+                if (url_values != NULL) {
+                    
+                    char **url_list = NULL;
+                    size_t url_count = 1;
+                    char *url_tmp = NULL;
+                    char *url_last_delim = 0;
+            
+                    /*determine number of URLs in the list*/
+                    url_tmp = strstr(url_values, ",");
+                    while (url_tmp != NULL) {
+                        url_count++;
+                        url_last_delim = url_tmp + 1;
+                        url_tmp = strstr(url_last_delim, ",");
+                    }
+
+                    /*create array of URL lists to send to detect engine*/
+                    char *tmp_url_values = SCMalloc((strlen(url_values) + 1) * sizeof(char));
+                    if (unlikely(tmp_url_values == NULL)) {
+                        SCLogError(SC_ERR_MEM_ALLOC, "Can't allocate URL values");
+                        SCReturn(TM_ECODE_FAILED);
+                    }
+                    memset(tmp_url_values, 0, (strlen(url_values) + 1) * sizeof(char));
+                    memcpy(tmp_url_values, url_values, (strlen(url_values)));
+                    url_list = SCMalloc((url_count+1) * sizeof(char *));
+                    if (url_list != NULL) {
+                        size_t url_index  = 0;
+                        char *url_token = strtok(tmp_url_values, ",");
+                        while (url_token != NULL) {
+                            *(url_list + url_index++) = strdup(url_token);
+                            url_token = strtok(NULL, ",");
+                        }
+                        *(url_list + url_index) = NULL;
+                    }
+                    SCFree(tmp_url_values);
+
+                    char *indicator_title_copy = SCMalloc((strlen(indic_title) + 1) * sizeof(char));
+                    if (unlikely(indicator_title_copy == NULL)) {
+                        SCLogError(SC_ERR_MEM_ALLOC, "Can't allocate indicator title copy");
+                        SCReturn(TM_ECODE_FAILED);
+                    }
+                    memset(indicator_title_copy, 0, (strlen(indic_title) + 1) * sizeof(char));
+                    memcpy(indicator_title_copy, indic_title, strlen(indic_title));
+
+                    /*add URLs to watch list*/
+                    //AddURLsToWatchList(indicator_title_copy, url_list, url_count);
+                } else {
+                    SCLogWarning(SC_ERR_INITIALIZATION, "No URL values were specified in the JSON message.");
+                }
+            }
+
 
         } else if (strcmp(indic_type_text, "Malicious E-mail") == 0) {
             json_unpack(observable,
